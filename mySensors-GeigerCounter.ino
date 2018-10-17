@@ -1,4 +1,11 @@
 /**
+ * Dependencies:
+ * - https://github.com/mysensors/MySensors/releases/tag/2.2.0
+ * - https://github.com/olikraus/u8g2
+ */
+
+
+/**
  * Wireing
  */
 
@@ -17,7 +24,6 @@
 // Enable debug prints
 #define MY_DEBUG
 
-
 // Enable and select radio type attached 
 #define MY_RADIO_NRF24
 #define MY_RF24_CE_PIN SPI_CE_PIN
@@ -32,9 +38,8 @@
 /**
  * SSD1306 Oled Display
  */
-//#include <Adafruit_SSD1306.h>
-
-//Adafruit_SSD1306 display(4);
+#include <U8x8lib.h>
+U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 
 
 /**
@@ -52,15 +57,17 @@ unsigned long cpm = 0;             // counts per minute
 unsigned long previousMillis;      // time measurement
 
 
-
-
-
-
-
+/**
+ * 
+ */
 void ISR_event() { // Captures count of events from Geiger counter board
   counts++;
 }
 
+
+/**
+ * 
+ */
 void setup() {
   // do nothing
 }
@@ -78,7 +85,6 @@ void presentation() {
 }
 
 
-
 /**
  * Before this node starts
  */
@@ -86,8 +92,9 @@ void before() {
   Serial.begin(115200);
 
   // init SSD1306 128x64 oled display
-  //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x64)
-  // displaySplash();
+  u8x8.begin();
+  u8x8.setPowerSave(0);
+  displaySplash();
 
   // init interrupts to capture tube events
   pinMode(EVENT_PIN, INPUT);                                             // set pin for capturing tube events
@@ -97,42 +104,42 @@ void before() {
   Serial.println("setup complete.");
 }
 
-/*
+
+/**
+ * 
+ */
 void displayRadioactivity(unsigned long cpm) {
-  display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.setTextSize(1);
-  display.println("Radioactivity:");
-  display.println("");
-  display.setTextSize(2);
-  display.print(cpm); display.println(" cpm");
-  display.display();
+  u8x8.clearLine(2);
+  u8x8.setCursor(0,2);
+  u8x8.print(cpm);
+  u8x8.print(" cpm");
 }
 
 
+/**
+ * 
+ */
 void displaySplash() {
-  display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.setTextSize(2);
-  display.println("My Geiger");
-  display.println("Counter");
-  display.display();
+  u8x8.clear();
+  u8x8.setFont(u8x8_font_chroma48medium8_r);
+  u8x8.setCursor(0,0);
+  u8x8.print("Geiger Counter");
+  u8x8.setCursor(0,2);
+  u8x8.print("Sensor v0.1");
 
   wait(2000);
 
-  display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.setTextSize(1);
-  display.println("Radioactivity:");
-  display.println("");
-  display.println("Measuring ...");
-  display.display();
+  u8x8.clear();
+  u8x8.setCursor(0,0);
+  u8x8.print("Radioactivity:");
+  u8x8.setCursor(0,2);
+  u8x8.print("Measuring ...");
 }
-*/
 
+
+/**
+ * 
+ */
 void loop() {
   unsigned long currentMillis = millis();
 
@@ -145,7 +152,7 @@ void loop() {
     Serial.print(cpm);
     Serial.println("cpm");
 
-    // displayRadioactivity(cpm);
+    displayRadioactivity(cpm);
 
     send(msg.set(cpm, 1));
   }
